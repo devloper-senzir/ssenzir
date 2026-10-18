@@ -9,7 +9,7 @@ from telethon import events, functions
 
 LOGS = logging.getLogger(__name__)
 
-# ملف حفظ بيانات الحماية
+#جميع الحقوق محفوظة لــ المطور سينزر #
 DATA_FILE = os.path.join(
     os.path.dirname(os.path.abspath(__file__)),
     "pmpermit_data.json",
@@ -18,13 +18,15 @@ DATA_FILE = os.path.join(
 MAX_FLOOD_IN_PMS = int(os.getenv("MAX_FLOOD_IN_PMS", "6"))
 BOTLOG_CHATID = os.getenv("BOTLOG_CHATID")
 
-# حالات الحماية داخل هذا الحساب
+#جميع الحقوق محفوظة لــ المطور سينزر #
 state = {
     "enabled": False,
     "pmwarns": {},
     "message_cache": {},
     "approved": {},
     "temporary_approved": [],
+#جميع الحقوق محفوظة لــ المطور سينزر #
+    "max_flood_in_pms": MAX_FLOOD_IN_PMS,
 }
 
 
@@ -89,7 +91,7 @@ async def _get_target(event, text):
         except Exception:
             pass
 
-    # معرف أو ID داخل الأمر
+#جميع الحقوق محفوظة لــ المطور سينزر #
     value = (text or "").strip()
     if not value:
         if event.is_private:
@@ -184,9 +186,10 @@ async def _private_protection(event):
     if _approved(user.id) or _temp_approved(user.id):
         return
 
+    max_warns = max(1, min(int(state.get("max_flood_in_pms", MAX_FLOOD_IN_PMS)), 100))
     warns = int(state["pmwarns"].get(uid, 0)) + 1
 
-    if warns > MAX_FLOOD_IN_PMS:
+    if warns > max_warns:
         state["pmwarns"].pop(uid, None)
         await _clear_cached_message(event, user.id)
         _save()
@@ -213,7 +216,7 @@ async def _private_protection(event):
     me = await event.client.get_me()
     mention = _mention(user)
     my_name = getattr(me, "first_name", None) or "المالك"
-    total = MAX_FLOOD_IN_PMS + 1
+    total = max_warns
     remaining = max(total - warns, 0)
 
     text = (
@@ -265,6 +268,33 @@ def register(senzir):
                 getattr(event, "chat_id", None),
                 e,
             )
+
+    @senzir.on(
+        events.NewMessage(
+            outgoing=True,
+            pattern=r"\.اضف عدد التحذيرات\s+(\d+)$",
+        )
+    )
+    async def set_warning_count(event):
+        try:
+            count = int(event.pattern_match.group(1))
+        except (TypeError, ValueError):
+            count = 0
+
+        if not 1 <= count <= 100:
+            return await _edit_delete(
+                event,
+                "**⎉╎حدد عددًا من 1 إلى 100.**\n"
+                "**مثال:** `.اضف عدد التحذيرات 4`",
+            )
+
+        state["max_flood_in_pms"] = count
+        _save()
+        return await _edit_delete(
+            event,
+            f"**⎉╎تم ضبط عدد التحذيرات إلى {count} بنجاح ✅**\n\n"
+            f"**⎉╎سيظهر العدد {count} في رسالة التحذير، وسيتم الحظر عند تجاوز هذا العدد.**",
+        )
 
     @senzir.on(
         events.NewMessage(
@@ -545,7 +575,7 @@ def register(senzir):
                 f"**- التـاريخ :** __{item.get('date', '')}__\n"
                 f"**- السـبـب :** __{item.get('reason', '')}__\n\n"
             )
-
+#جميع الحقوق محفوظة لــ المطور سينزر #
         await _edit_or_reply(event, text)
 
-    LOGS.info("تم تسجيل ملف حماية الخاص مع senzir")
+    LOGS.info("code by @senzir1")
